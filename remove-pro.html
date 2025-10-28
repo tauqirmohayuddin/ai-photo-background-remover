@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AI Photo Background Remover</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f8f8f8; margin: 0; padding: 0; color: #333; }
+    header { background: #2c3e50; color: white; text-align: center; padding: 20px 0; }
+    main { max-width: 800px; margin: 20px auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    input, button { margin: 10px 0; }
+    button { background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
+    button:hover { background: #2ecc71; }
+    #resultImg { max-width: 100%; border-radius: 8px; margin-top: 20px; display: none; }
+    footer { text-align: center; padding: 15px; color: #888; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AI Photo Background Remover</h1>
+  </header>
+
+  <main>
+    <h2>Upload Your Image</h2>
+    <input type="file" id="fileInput" accept="image/*">
+    <button id="removeBtn">Remove Background</button>
+    <p id="status"></p>
+    <img id="resultImg" alt="Result will appear here">
+
+    <div id="downloadContainer" style="display:none;">
+      <a id="downloadLink" href="#" download="result.png">
+        <button>Download Result</button>
+      </a>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2025 AI Photo Background Remover</p>
+  </footer>
+
+  <script>
+    const fileInput = document.getElementById("fileInput");
+    const removeBtn = document.getElementById("removeBtn");
+    const status = document.getElementById("status");
+    const resultImg = document.getElementById("resultImg");
+    const downloadContainer = document.getElementById("downloadContainer");
+    const downloadLink = document.getElementById("downloadLink");
+
+    function setStatus(msg, color = "#333") {
+      status.style.color = color;
+      status.textContent = msg;
+    }
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    removeBtn.addEventListener("click", async () => {
+      const file = fileInput.files[0];
+      if (!file) {
+        setStatus("Please select a file first!", "red");
+        return;
+      }
+
+      setStatus("Uploading image...");
+      removeBtn.disabled = true;
+
+      try {
+        const imageBase64 = await fileToBase64(file);
+        const res = await fetch("/.netlify/functions/remove-bg", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageBase64 })
+        });
+
+        if (!res.ok) throw new Error("Server error: " + res.status);
+
+        const data = await res.json();
+        if (!data.imageBase64) throw new Error("No image returned from server");
+
+        resultImg.src = data.imageBase64;
+        resultImg.style.display = "block";
+        downloadLink.href = data.imageBase64;
+        downloadContainer.style.display = "block";
+        setStatus("Background removed successfully!", "green");
+      } catch (err) {
+        console.error(err);
+        setStatus("Error: " + err.message, "red");
+      } finally {
+        removeBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
