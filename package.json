@@ -1,0 +1,10 @@
+{
+  "name": "ai-photo-background-remover",
+  "version": "1.0.0",
+  "description": "AI tool to remove photo backgrounds quickly and accurately.",
+  "main": "index.js",
+  "scripts": {
+    "start": "echo 'No local server needed for static site'"
+  },
+  "license": "MIT"
+}
